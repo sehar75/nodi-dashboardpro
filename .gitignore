@@ -1,0 +1,4 @@
+node_modules
+.env
+# need to ignore all mac files
+.DS_Store
