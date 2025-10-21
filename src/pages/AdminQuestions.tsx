@@ -35,7 +35,10 @@ const AdminQuestions = () => {
 
   const handleUpdateQuestion = async (questionId: string, updatedQuestion: Partial<Question>) => {
     try {
+      // Call the API to update the question (filtering is handled in the API layer)
       await backendQuestionsApi.updateQuestion(questionId, updatedQuestion);
+      
+      // Update the local state with the form data
       setQuestions((prevQuestions) =>
         prevQuestions.map((question) =>
           question.id === questionId ? { ...question, ...updatedQuestion } : question
@@ -46,12 +49,28 @@ const AdminQuestions = () => {
     }
   };
 
-  const handleDeleteQuestion = async (questionId: string) => {
+  const handleDeleteQuestion = async (questionId: string): Promise<void> => {
     try {
       await backendQuestionsApi.deleteQuestion(questionId);
       setQuestions((prevQuestions) => prevQuestions.filter((q) => q.id !== questionId));
     } catch (error) {
       console.error("Error deleting question:", error);
+      // Re-throw to let the component handle the error
+      throw error;
+    }
+  };
+
+  const handleAddQuestion = async (newQuestion: {
+    question_text: string;
+    question_description: string;
+    question_placeholder: string;
+  }): Promise<void> => {
+    try {
+      const createdQuestion = await backendQuestionsApi.createQuestion(newQuestion);
+      setQuestions((prevQuestions) => [...prevQuestions, createdQuestion]);
+    } catch (error) {
+      console.error("Error adding question:", error);
+      throw error;
     }
   };
 
@@ -71,6 +90,7 @@ const AdminQuestions = () => {
       questions={questions}
       onUpdateQuestion={handleUpdateQuestion}
       onDeleteQuestion={handleDeleteQuestion}
+      onAddQuestion={handleAddQuestion}
     />
   );
 };

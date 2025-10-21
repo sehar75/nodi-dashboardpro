@@ -33,21 +33,22 @@ const AdminUsers = () => {
     loadUsers();
   }, []);
 
-  const handleToggleActive = async (userId: string) => {
+  const handleToggleActive = async (userId: string): Promise<void> => {
     try {
       const user = users.find(u => u.id === userId);
       if (user) {
-        await backendUsersApi.toggleUserStatus(userId, !user.isActive);
+        await backendUsersApi.toggleUserStatus(userId, !user.active);
         setUsers((prevUsers) =>
           prevUsers.map((user) =>
             user.id === userId
-              ? { ...user, isActive: !user.isActive, status: !user.isActive ? "active" : "inactive" }
+              ? { ...user, active: !user.active }
               : user
           )
         );
       }
     } catch (error) {
       console.error("Error toggling user status:", error);
+      throw error; // Re-throw to let the component handle the error
     }
   };
 

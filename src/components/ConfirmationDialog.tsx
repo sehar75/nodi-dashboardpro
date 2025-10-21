@@ -17,6 +17,7 @@ interface ConfirmationDialogProps {
   cancelText?: string;
   onConfirm: () => void;
   variant?: "default" | "destructive";
+  disabled?: boolean;
 }
 
 export const ConfirmationDialog = ({
@@ -28,6 +29,7 @@ export const ConfirmationDialog = ({
   cancelText = "Cancel",
   onConfirm,
   variant = "default",
+  disabled = false,
 }: ConfirmationDialogProps) => {
   const handleConfirm = () => {
     onConfirm();
@@ -42,12 +44,17 @@ export const ConfirmationDialog = ({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            disabled={disabled}
+          >
             {cancelText}
           </Button>
           <Button
             onClick={handleConfirm}
             variant={variant === "destructive" ? "destructive" : "default"}
+            disabled={disabled}
           >
             {confirmText}
           </Button>

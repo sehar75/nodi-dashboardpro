@@ -33,65 +33,84 @@ export const EditQuestionDialog = ({
   onOpenChange,
   onSave,
 }: EditQuestionDialogProps) => {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
-  const [difficulty, setDifficulty] = useState("");
+  const [questionText, setQuestionText] = useState("");
+  const [questionDescription, setQuestionDescription] = useState("");
+  const [questionPlaceholder, setQuestionPlaceholder] = useState("");
+  const [stepOrder, setStepOrder] = useState(0);
 
   useEffect(() => {
     if (question) {
-      setTitle(question.title);
-      setDescription(question.description);
-      setCategory(question.category);
-      setDifficulty(question.difficulty);
+      setQuestionText(question.question_text);
+      setQuestionDescription(question.question_description);
+      setQuestionPlaceholder(question.question_placeholder);
+      setStepOrder(question.step_order);
+    } else {
+      // Reset form for new question
+      setQuestionText("");
+      setQuestionDescription("");
+      setQuestionPlaceholder("");
+      setStepOrder(0);
     }
   }, [question]);
 
   const handleSave = () => {
-    onSave({
-      title,
-      description,
-      category,
-      difficulty,
-    });
+    if (question) {
+      // For editing, include all fields
+      onSave({
+        question_text: questionText,
+        question_description: questionDescription,
+        question_placeholder: questionPlaceholder,
+        step_order: stepOrder,
+      });
+    } else {
+      // For adding new question, exclude step_order (API will auto-assign)
+      onSave({
+        question_text: questionText,
+        question_description: questionDescription,
+        question_placeholder: questionPlaceholder,
+      });
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle>Edit Question</DialogTitle>
+          <DialogTitle>{question ? "Edit Question" : "Add New Question"}</DialogTitle>
           <DialogDescription>
-            Make changes to the question below. Click save when you're done.
+            {question 
+              ? "Make changes to the question below. Click save when you're done."
+              : "Fill in the details for the new question below. Click save when you're done."
+            }
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="title">Question Text</Label>
+            <Label htmlFor="questionText">Question Text</Label>
             <Textarea
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter question title"
+              id="questionText"
+              value={questionText}
+              onChange={(e) => setQuestionText(e.target.value)}
+              placeholder="Enter question text"
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="questionDescription">Question Description</Label>
             <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              id="questionDescription"
+              value={questionDescription}
+              onChange={(e) => setQuestionDescription(e.target.value)}
               placeholder="Enter question description"
               rows={4}
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="category">Placeholder</Label>
+            <Label htmlFor="questionPlaceholder">Question Placeholder</Label>
             <Input
-              id="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              placeholder="Enter category"
+              id="questionPlaceholder"
+              value={questionPlaceholder}
+              onChange={(e) => setQuestionPlaceholder(e.target.value)}
+              placeholder="Enter question placeholder"
             />
           </div>
         </div>
@@ -99,7 +118,7 @@ export const EditQuestionDialog = ({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>Save changes</Button>
+          <Button onClick={handleSave}>{question ? "Save changes" : "Add question"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

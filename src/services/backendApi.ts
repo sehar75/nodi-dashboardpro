@@ -123,15 +123,32 @@ export const backendUsersApi = {
   // Toggle user active status
   toggleUserStatus: async (id: string, isActive: boolean): Promise<User> => {
     try {
-      const response = await backendApi.patch(`/admin/users/${id}/status`, {
+      console.log(`Toggling user ${id} to isActive: ${isActive}`);
+      const response = await backendApi.put(`/admin/users/${id}/activate`, {
         isActive,
       });
-      return response.data;
+      console.log("Toggle response:", response.data);
+      
+      // Handle the API response structure
+      if (response.data && response.data.success) {
+        // The API returns success, we don't need the full user object
+        // Just return a minimal object to indicate success
+        return response.data;
+      } else {
+        console.error("API returned unsuccessful response:", response.data);
+        throw new Error("API request failed");
+      }
     } catch (error) {
       console.error("Error toggling user status:", error);
       throw error;
     }
   },
+};
+
+// Utility function to filter out read-only properties for API updates
+const filterReadOnlyProperties = (data: Partial<Question>): Partial<Question> => {
+  const { id, createdAt, updatedAt, ...allowedFields } = data;
+  return allowedFields;
 };
 
 // Backend Questions API endpoints
@@ -178,7 +195,16 @@ export const backendQuestionsApi = {
   getQuestionById: async (id: string): Promise<Question> => {
     try {
       const response = await backendApi.get(`/admin/questions/${id}`);
-      return response.data;
+      
+      // Handle the API response structure
+      if (response.data && response.data.success && response.data.data) {
+        return response.data.data;
+      } else if (response.data && typeof response.data === 'object' && 'id' in response.data) {
+        return response.data as Question;
+      } else {
+        console.error("Unexpected API response structure:", response.data);
+        throw new Error("Invalid response structure");
+      }
     } catch (error) {
       console.error("Error fetching question by ID:", error);
       throw error;
@@ -186,10 +212,23 @@ export const backendQuestionsApi = {
   },
 
   // Create new question
-  createQuestion: async (question: Omit<Question, "id">): Promise<Question> => {
+  createQuestion: async (question: {
+    question_text: string;
+    question_description: string;
+    question_placeholder: string;
+  }): Promise<Question> => {
     try {
       const response = await backendApi.post("/admin/questions", question);
-      return response.data;
+      
+      // Handle the API response structure
+      if (response.data && response.data.success && response.data.data) {
+        return response.data.data;
+      } else if (response.data && typeof response.data === 'object' && 'id' in response.data) {
+        return response.data as Question;
+      } else {
+        console.error("Unexpected API response structure:", response.data);
+        throw new Error("Invalid response structure");
+      }
     } catch (error) {
       console.error("Error creating question:", error);
       throw error;
@@ -202,7 +241,9 @@ export const backendQuestionsApi = {
     question: Partial<Question>
   ): Promise<Question> => {
     try {
-      const response = await backendApi.put(`/admin/questions/${id}`, question);
+      // Filter out read-only properties before sending to API
+      const filteredQuestion = filterReadOnlyProperties(question);
+      const response = await backendApi.put(`/admin/questions/${id}`, filteredQuestion);
       return response.data;
     } catch (error) {
       console.error("Error updating question:", error);
