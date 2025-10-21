@@ -10,17 +10,12 @@ const navItemBaseClasses =
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is authenticated
-    const token = localStorage.getItem("authToken");
     const userData = localStorage.getItem("user");
-    
-    if (token && userData) {
-      setIsAuthenticated(true);
+    if (userData) {
       setUser(JSON.parse(userData));
     }
   }, []);
@@ -28,22 +23,15 @@ const AdminLayout = () => {
   const handleLogout = async () => {
     try {
       await backendAuthApi.logout();
-      setIsAuthenticated(false);
-      setUser(null);
-      toast({
-        title: "Logged out successfully",
-        description: "You have been logged out",
-      });
-      navigate("/login");
-    } catch (error) {
-      console.error("Logout error:", error);
-      // Still clear local storage even if API call fails
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("user");
-      setIsAuthenticated(false);
-      setUser(null);
-      navigate("/login");
+    } catch {
+      // Continue logout even if API call fails
     }
+    setUser(null);
+    toast({
+      title: "Logged out successfully",
+      description: "You have been logged out",
+    });
+    navigate("/login");
   };
 
   return (
@@ -76,8 +64,8 @@ const AdminLayout = () => {
                 `${navItemBaseClasses} ${isActive ? "bg-accent/60" : ""}`
               }
             >
-              <LayoutDashboard className="h-8 w-6" />
-              <span className="font-medium text-xl" >Dashboard</span>
+              <LayoutDashboard className="h-5 w-5" />
+              <span className="font-medium text-xl">Dashboard</span>
             </NavLink>
             <NavLink
               to="/admin/users"
@@ -85,7 +73,7 @@ const AdminLayout = () => {
                 `${navItemBaseClasses} ${isActive ? "bg-accent/60" : ""}`
               }
             >
-              <Users className="h-4 w-4" />
+              <Users className="h-5 w-5" />
               <span className="font-medium text-xl">Users</span>
             </NavLink>
             <NavLink
@@ -94,7 +82,7 @@ const AdminLayout = () => {
                 `${navItemBaseClasses} ${isActive ? "bg-accent/60" : ""}`
               }
             >
-              <HelpCircle className="h-4 w-4" />
+              <HelpCircle className="h-5 w-5" />
               <span className="font-medium text-xl">Questions</span>
             </NavLink>
           </nav>
@@ -105,11 +93,10 @@ const AdminLayout = () => {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-medium">Administration</h2>
               <div className="flex items-center gap-2">
-                {/* Auth button */}
-                {isAuthenticated ? (
+                {user ? (
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">
-                      Welcome, {user?.display_name || user?.email}
+                      Welcome, {user.display_name || user.email}
                     </span>
                     <Button
                       variant="outline"
@@ -132,7 +119,6 @@ const AdminLayout = () => {
                     Login
                   </Button>
                 )}
-                {/* Mobile hamburger button */}
                 <button
                   onClick={() => setSidebarOpen(!sidebarOpen)}
                   className="md:hidden p-2 rounded-md hover:bg-accent transition-colors"

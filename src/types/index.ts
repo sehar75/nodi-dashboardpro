@@ -1,11 +1,17 @@
 export interface User {
   id: string;
-  name: string;
   email: string;
+  display_name: string;
+  firstName: string | null;
+  lastName: string | null;
+  profileImage: string | null;
+  active: boolean;
   role: string;
-  status: string;
-  isActive: boolean;
-  joinedDate: string;
+  isOnboardingAnswered: boolean;
+  isOnboarded: boolean;
+  career: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Question {

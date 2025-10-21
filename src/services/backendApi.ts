@@ -1,7 +1,6 @@
 import axios from "axios";
 import { User, Question } from "@/types";
 
-// Create axios instance with backend configuration
 const backendApi = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:5003/api",
   timeout: 10000,
@@ -10,278 +9,127 @@ const backendApi = axios.create({
   },
 });
 
-// Request interceptor for adding auth tokens
-backendApi.interceptors.request.use(
-  (config) => {
-    // Add auth token if available
-    const token = localStorage.getItem("authToken");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+backendApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem("authToken");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-);
+  return config;
+});
 
-// Response interceptor for error handling
-backendApi.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    console.error("Backend API Error:", error);
-    return Promise.reject(error);
+// Utility to extract array from various response structures
+const extractArray = <T>(data: any, keys: string[] = ['data', 'users', 'questions']): T[] => {
+  if (Array.isArray(data)) return data;
+  if (data?.success && Array.isArray(data.data)) return data.data;
+  for (const key of keys) {
+    if (data?.[key] && Array.isArray(data[key])) return data[key];
   }
-);
+  return [];
+};
 
-// Backend Users API endpoints
+// Utility to extract single item from response
+const extractItem = <T>(data: any): T => {
+  if (data?.success && data.data) return data.data;
+  if (data && typeof data === 'object' && 'id' in data) return data as T;
+  return data;
+};
+
 export const backendUsersApi = {
-  // Get all users from backend
   getAllUsers: async (): Promise<User[]> => {
-    try {
-      const response = await backendApi.get("/admin/users");
-      console.log("Backend API Response:", response.data);
-
-      // Handle different response structures
-      if (response.data && Array.isArray(response.data)) {
-        return response.data;
-      } else if (
-        response.data &&
-        response.data.data &&
-        Array.isArray(response.data.data)
-      ) {
-        return response.data.data;
-      } else if (
-        response.data &&
-        response.data.users &&
-        Array.isArray(response.data.users)
-      ) {
-        return response.data.users;
-      } else {
-        console.error("Unexpected API response structure:", response.data);
-        return [];
-      }
-    } catch (error) {
-      console.error("Error fetching users from backend:", error);
-      throw error;
-    }
+    const response = await backendApi.get("/admin/users");
+    return extractArray<User>(response.data);
   },
 
-  // Get user by ID
   getUserById: async (id: string): Promise<User> => {
-    try {
-      const response = await backendApi.get(`/admin/users/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching user by ID:", error);
-      throw error;
-    }
+    const response = await backendApi.get(`/admin/users/${id}`);
+    return extractItem<User>(response.data);
   },
 
-  // Create new user
   createUser: async (user: Omit<User, "id">): Promise<User> => {
-    try {
-      const response = await backendApi.post("/admin/users", user);
-      return response.data;
-    } catch (error) {
-      console.error("Error creating user:", error);
-      throw error;
-    }
+    const response = await backendApi.post("/admin/users", user);
+    return extractItem<User>(response.data);
   },
 
-  // Update user
   updateUser: async (id: string, user: Partial<User>): Promise<User> => {
-    try {
-      const response = await backendApi.put(`/admin/users/${id}`, user);
-      return response.data;
-    } catch (error) {
-      console.error("Error updating user:", error);
-      throw error;
-    }
+    const response = await backendApi.put(`/admin/users/${id}`, user);
+    return extractItem<User>(response.data);
   },
 
-  // Delete user
   deleteUser: async (id: string): Promise<void> => {
-    try {
-      await backendApi.delete(`/admin/users/${id}`);
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      throw error;
-    }
+    await backendApi.delete(`/admin/users/${id}`);
   },
 
-  // Delete multiple users
   deleteUsers: async (ids: string[]): Promise<void> => {
-    try {
-      await backendApi.delete("/admin/users/batch", { data: { ids } });
-    } catch (error) {
-      console.error("Error deleting users:", error);
-      throw error;
-    }
+    await backendApi.delete("/admin/users/batch", { data: { ids } });
   },
 
-  // Toggle user active status
-  toggleUserStatus: async (id: string, isActive: boolean): Promise<User> => {
-    try {
-      const response = await backendApi.patch(`/admin/users/${id}/status`, {
-        isActive,
-      });
-      return response.data;
-    } catch (error) {
-      console.error("Error toggling user status:", error);
-      throw error;
-    }
+  toggleUserStatus: async (id: string, isActive: boolean): Promise<any> => {
+    const response = await backendApi.put(`/admin/users/${id}/activate`, { isActive });
+    return response.data;
   },
 };
 
-// Backend Questions API endpoints
 export const backendQuestionsApi = {
-  // Get all questions from backend
   getAllQuestions: async (): Promise<Question[]> => {
-    try {
-      const response = await backendApi.get("/admin/questions");
-      console.log("Backend Questions API Response:", response.data);
-
-      // Handle the specific response structure from your API
-      if (
-        response.data &&
-        response.data.success &&
-        response.data.data &&
-        Array.isArray(response.data.data)
-      ) {
-        return response.data.data;
-      } else if (response.data && Array.isArray(response.data)) {
-        return response.data;
-      } else if (
-        response.data &&
-        response.data.data &&
-        Array.isArray(response.data.data)
-      ) {
-        return response.data.data;
-      } else if (
-        response.data &&
-        response.data.questions &&
-        Array.isArray(response.data.questions)
-      ) {
-        return response.data.questions;
-      } else {
-        console.error("Unexpected API response structure:", response.data);
-        return [];
-      }
-    } catch (error) {
-      console.error("Error fetching questions from backend:", error);
-      throw error;
-    }
+    const response = await backendApi.get("/admin/questions");
+    return extractArray<Question>(response.data);
   },
 
-  // Get question by ID
   getQuestionById: async (id: string): Promise<Question> => {
-    try {
-      const response = await backendApi.get(`/admin/questions/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching question by ID:", error);
-      throw error;
-    }
+    const response = await backendApi.get(`/admin/questions/${id}`);
+    return extractItem<Question>(response.data);
   },
 
-  // Create new question
-  createQuestion: async (question: Omit<Question, "id">): Promise<Question> => {
-    try {
-      const response = await backendApi.post("/admin/questions", question);
-      return response.data;
-    } catch (error) {
-      console.error("Error creating question:", error);
-      throw error;
-    }
+  createQuestion: async (question: {
+    question_text: string;
+    question_description: string;
+    question_placeholder: string;
+  }): Promise<Question> => {
+    const response = await backendApi.post("/admin/questions", question);
+    return extractItem<Question>(response.data);
   },
 
-  // Update question
-  updateQuestion: async (
-    id: string,
-    question: Partial<Question>
-  ): Promise<Question> => {
-    try {
-      const response = await backendApi.put(`/admin/questions/${id}`, question);
-      return response.data;
-    } catch (error) {
-      console.error("Error updating question:", error);
-      throw error;
-    }
+  updateQuestion: async (id: string, question: Partial<Question>): Promise<Question> => {
+    const { id: _, createdAt, updatedAt, ...allowedFields } = question;
+    const response = await backendApi.put(`/admin/questions/${id}`, allowedFields);
+    return extractItem<Question>(response.data);
   },
 
-  // Delete question
   deleteQuestion: async (id: string): Promise<void> => {
-    try {
-      await backendApi.delete(`/admin/questions/${id}`);
-    } catch (error) {
-      console.error("Error deleting question:", error);
-      throw error;
-    }
+    await backendApi.delete(`/admin/questions/${id}`);
   },
 };
 
-// Backend Auth API endpoints
 export const backendAuthApi = {
-  // Login user
   login: async (credentials: { email: string; password: string }) => {
-    try {
-      const response = await backendApi.post("/auth/login", credentials);
-      return response.data;
-    } catch (error) {
-      console.error("Error logging in:", error);
-      throw error;
-    }
+    const response = await backendApi.post("/auth/login", credentials);
+    return response.data;
   },
 
-  // Register new user
   register: async (userData: {
     name: string;
     email: string;
     password: string;
     role: string;
   }) => {
-    try {
-      const response = await backendApi.post("/auth/register", userData);
-      return response.data;
-    } catch (error) {
-      console.error("Error registering user:", error);
-      throw error;
-    }
+    const response = await backendApi.post("/auth/register", userData);
+    return response.data;
   },
 
-  // Logout user
   logout: async () => {
-    try {
-      await backendApi.post("/auth/logout");
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("user");
-    } catch (error) {
-      console.error("Error logging out:", error);
-      throw error;
-    }
+    await backendApi.post("/auth/logout");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
   },
 
-  // Get current user
   getCurrentUser: async () => {
-    try {
-      const response = await backendApi.get("/auth/me");
-      return response.data;
-    } catch (error) {
-      console.error("Error getting current user:", error);
-      throw error;
-    }
+    const response = await backendApi.get("/auth/me");
+    return response.data;
   },
 
-  // Refresh token
   refreshToken: async () => {
-    try {
-      const response = await backendApi.post("/auth/refresh");
-      return response.data;
-    } catch (error) {
-      console.error("Error refreshing token:", error);
-      throw error;
-    }
+    const response = await backendApi.post("/auth/refresh");
+    return response.data;
   },
 };
 
