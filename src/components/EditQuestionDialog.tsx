@@ -12,13 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface EditQuestionDialogProps {
   question: Question | null;
@@ -45,7 +38,6 @@ export const EditQuestionDialog = ({
       setQuestionPlaceholder(question.question_placeholder);
       setStepOrder(question.step_order);
     } else {
-      // Reset form for new question
       setQuestionText("");
       setQuestionDescription("");
       setQuestionPlaceholder("");
@@ -54,22 +46,17 @@ export const EditQuestionDialog = ({
   }, [question]);
 
   const handleSave = () => {
+    const data: any = {
+      question_text: questionText,
+      question_description: questionDescription,
+      question_placeholder: questionPlaceholder,
+    };
+    
     if (question) {
-      // For editing, include all fields
-      onSave({
-        question_text: questionText,
-        question_description: questionDescription,
-        question_placeholder: questionPlaceholder,
-        step_order: stepOrder,
-      });
-    } else {
-      // For adding new question, exclude step_order (API will auto-assign)
-      onSave({
-        question_text: questionText,
-        question_description: questionDescription,
-        question_placeholder: questionPlaceholder,
-      });
+      data.step_order = stepOrder;
     }
+    
+    onSave(data);
   };
 
   return (

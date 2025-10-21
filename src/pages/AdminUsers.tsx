@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { UsersTab } from "@/components/UsersTab";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { User } from "@/types";
 import { backendUsersApi } from "@/services/backendApi";
 
@@ -8,72 +9,35 @@ const AdminUsers = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        const data = await backendUsersApi.getAllUsers();
-        console.log("Backend API Response:", data);
-        console.log("Data type:", typeof data);
-        console.log("Is array:", Array.isArray(data));
-        
-        // Ensure data is an array
-        if (Array.isArray(data)) {
-          setUsers(data);
-        } else {
-          console.error("Backend API returned non-array data:", data);
-          setUsers([]);
-        }
-      } catch (error) {
-        console.error("Error loading users from backend:", error);
-        setUsers([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadUsers();
+    backendUsersApi.getAllUsers()
+      .then(setUsers)
+      .catch(() => setUsers([]))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleToggleActive = async (userId: string): Promise<void> => {
-    try {
-      const user = users.find(u => u.id === userId);
-      if (user) {
-        await backendUsersApi.toggleUserStatus(userId, !user.active);
-        setUsers((prevUsers) =>
-          prevUsers.map((user) =>
-            user.id === userId
-              ? { ...user, active: !user.active }
-              : user
-          )
-        );
-      }
-    } catch (error) {
-      console.error("Error toggling user status:", error);
-      throw error; // Re-throw to let the component handle the error
-    }
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+    
+    await backendUsersApi.toggleUserStatus(userId, !user.active);
+    setUsers(prevUsers =>
+      prevUsers.map(u => u.id === userId ? { ...u, active: !u.active } : u)
+    );
   };
 
   const handleDeleteUsers = async (userIds: string[]) => {
-    try {
-      await backendUsersApi.deleteUsers(userIds);
-      setUsers((prevUsers) => prevUsers.filter((user) => !userIds.includes(user.id)));
-    } catch (error) {
-      console.error("Error deleting users:", error);
-    }
+    await backendUsersApi.deleteUsers(userIds);
+    setUsers(prevUsers => prevUsers.filter(u => !userIds.includes(u.id)));
   };
 
-  if (loading) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="mt-4 text-muted-foreground">Loading users...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <LoadingSpinner message="Loading users..." />;
 
   return (
-    <UsersTab users={users} onToggleActive={handleToggleActive} onDeleteUsers={handleDeleteUsers} />
+    <UsersTab 
+      users={users} 
+      onToggleActive={handleToggleActive} 
+      onDeleteUsers={handleDeleteUsers} 
+    />
   );
 };
 

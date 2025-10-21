@@ -30,36 +30,32 @@ export const ConfirmationDialog = ({
   onConfirm,
   variant = "default",
   disabled = false,
-}: ConfirmationDialogProps) => {
-  const handleConfirm = () => {
-    onConfirm();
-    onOpenChange(false);
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)}
-            disabled={disabled}
-          >
-            {cancelText}
-          </Button>
-          <Button
-            onClick={handleConfirm}
-            variant={variant === "destructive" ? "destructive" : "default"}
-            disabled={disabled}
-          >
-            {confirmText}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
+}: ConfirmationDialogProps) => (
+  <Dialog open={open} onOpenChange={onOpenChange}>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>{title}</DialogTitle>
+        <DialogDescription>{description}</DialogDescription>
+      </DialogHeader>
+      <DialogFooter>
+        <Button 
+          variant="outline" 
+          onClick={() => onOpenChange(false)}
+          disabled={disabled}
+        >
+          {cancelText}
+        </Button>
+        <Button
+          onClick={() => {
+            onConfirm();
+            onOpenChange(false);
+          }}
+          variant={variant === "destructive" ? "destructive" : "default"}
+          disabled={disabled}
+        >
+          {confirmText}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+);
